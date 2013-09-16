@@ -60,7 +60,7 @@ char * configfile = NULL;
 // Control initial values
 // { property, type, value}
 // Type: 0=string, 1=num, 2=bool, 3=unstripped string
-Control init[] = {
+static Control init[] = {
    {"httpPort",         1, "5988"},
    {"enableHttp",       2, "true"},
    {"enableUds",        2, "true"},
@@ -139,19 +139,23 @@ Control init[] = {
    {"indicationCurlTimeout",1,"10"},
 };
 
+static Control *cache;
+
 void sunsetControl()
 {
    int i,m;
    for (i = 0, m = sizeof(init) / sizeof(Control); i < m; i++) {
-      if(init[i].dupped) {
-	 free(init[i].strValue);
-	 init[i].dupped = 0;
+      if(cache[i].dupped) {
+         free(cache[i].strValue);
+         cache[i].dupped = 0;
       }
    }
    if (ct) {
       ct->ft->release(ct);
       ct=NULL;
    }
+   if (cache)
+     free(cache);
 }
 
 int setupControl(char *fn)
@@ -168,8 +172,11 @@ int setupControl(char *fn)
    ct = UtilFactory->newHashTable(61, UtilHashTable_charKey |
                 UtilHashTable_ignoreKeyCase);
 
+   cache = malloc(sizeof(init));
+   memcpy(cache, init, sizeof(init));
+
    for (i = 0, m = sizeof(init) / sizeof(Control); i < m; i++) {
-      ct->ft->put(ct, init[i].id, &init[i]);
+      ct->ft->put(ct, cache[i].id, &cache[i]);
    }
 
    if (fn) {
@@ -207,19 +214,19 @@ int setupControl(char *fn)
          break;
       case 2:
          for (i=0; i<sizeof(init)/sizeof(Control); i++) {
-            if (strcmp(rv.id, init[i].id) == 0) {
-	      if (init[i].type == 3) {
-		/* unstripped character string */
-		init[i].strValue=strdup(rv.val);
-		if (strchr(init[i].strValue,'\n'))
-		  *(strchr(init[i].strValue,'\n')) = 0;
-                init[i].dupped=1; 
-	      } 
+            if (strcmp(rv.id, cache[i].id) == 0) {
+              if (cache[i].type == 3) {
+                /* unstripped character string */
+                cache[i].strValue=strdup(rv.val);
+                if (strchr(cache[i].strValue,'\n'))
+                  *(strchr(cache[i].strValue,'\n')) = 0;
+                cache[i].dupped=1; 
+              } 
               else {
-		init[i].strValue=strdup(cntlGetVal(&rv));
-                init[i].dupped=1; 
-	      }
-	      goto ok;
+                cache[i].strValue=strdup(cntlGetVal(&rv));
+                cache[i].dupped=1; 
+              }
+              goto ok;
             }
          }
          mlogf(M_ERROR,M_SHOW,"--- invalid control statement: \n\t%d: %s\n", n, stmt);

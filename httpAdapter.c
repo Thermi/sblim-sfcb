@@ -105,6 +105,8 @@ static X509    *x509 = NULL;
 int ccVerifyMode = CC_VERIFY_IGNORE;
 static int get_cert(int,X509_STORE_CTX*);
 static int ccValidate(X509*, char**, int);
+static int sslReloadRequested = 0;
+static void initSSL();
 #endif
 
 /* return codes used by baValidate */
@@ -335,6 +337,24 @@ static void handleSigUsr1(int sig)
      pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);      
      pthread_create(&t, &tattr, (void *(*)(void *))stopProc,NULL);
    }
+}
+
+static void handleSigUsr2(int __attribute__ ((unused)) sig)
+{
+#ifndef LOCAL_CONNECT_ONLY_ENABLE
+#if defined USE_SSL
+  if (sfcbSSLMode) {
+    if (sslReloadRequested) {
+      mlogf(M_ERROR,M_SHOW,"--- %s (%d): SSL context reload already in progress\n",
+          processName,getpid());
+    } else {
+      mlogf(M_ERROR,M_SHOW,"--- %s (%d): SSL context reload requested\n",
+          processName,getpid());
+      sslReloadRequested = 1;
+    }
+  }
+#endif // USE_SSL
+#endif // LOCAL_CONNECT_ONLY_ENABLE
 }
 
 static void freeBuffer(Buffer * b)
@@ -1682,6 +1702,10 @@ initSSL()
                  *fnl,
                  *sslCiphers;
   int             rc;
+
+  if (ctx)
+    SSL_CTX_free(ctx);
+
   ctx = SSL_CTX_new(SSLv23_method());
   getControlChars("sslCertificateFilePath", &fnc);
   _SFCB_TRACE(1, ("---  sslCertificateFilePath = %s", fnc));
@@ -1733,6 +1757,7 @@ initSSL()
   if (SSL_CTX_set_cipher_list(ctx, sslCiphers) != 1)
     intSSLerror("Error setting cipher list (no valid ciphers)");
 
+  sslReloadRequested = 0;
 }
 #endif                          // USE_SSL
 
@@ -1974,7 +1999,7 @@ int httpDaemon(int argc, char *argv[], int sslMode, int sfcbPid)
   setSignal(SIGINT, SIG_IGN, 0);
   setSignal(SIGTERM, SIG_IGN, 0);
   setSignal(SIGHUP, SIG_IGN, 0);
-  setSignal(SIGUSR2, SIG_IGN, 0);
+  setSignal(SIGUSR2, handleSigUsr2, 0);
 
 #if defined USE_SSL
   if (sslMode) {
@@ -2015,6 +2040,16 @@ int httpDaemon(int argc, char *argv[], int sslMode, int sfcbPid)
 
     if (stopAccepting)
       break;
+
+#ifdef USE_SSL
+    if (sslReloadRequested) {
+      sunsetControl();
+      setupControl(configfile);
+      initSSL();
+      sleep(1);
+      continue;
+    }
+#endif                          // USE_SSL
     if (rc < 0) {
       if (errno == EINTR || errno == EAGAIN) {
         continue;
