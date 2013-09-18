@@ -214,7 +214,7 @@ static CMPIStatus releaseClient(Client * mb)
   if (cl->connection) CMRelease(cl->connection);
 
   free(cl);
-  closeLogging();
+  closeLogging(0);
   return rc;
 }
 

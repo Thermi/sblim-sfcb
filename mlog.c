@@ -130,10 +130,11 @@ void startLogging(int level, int thread) {
   * Closes the pipe used for logging and  closes out
   * the syslog services that are created in startLogging.
   */
-void closeLogging() {
+void closeLogging(int thread) {
    int wstat;
    closelog();
-   close(logfds[1]);
+   if (thread)
+     close(logfds[1]);
    wait(&wstat); // wait to prevent zombie
 }
 
