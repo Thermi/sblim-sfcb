@@ -487,7 +487,8 @@ static CMPIObjectPath *__ift_getObjectPath(const CMPIInstance * instance,
       }
       if (! *mtx) {
          mlogf(M_ERROR, M_SHOW, "--- Could not get op for instance of %s; mutex creation failure\n", cn);
-         CMSetStatus(rc, CMPI_RC_ERR_FAILED);
+         if(rc)
+            CMSetStatus(rc, CMPI_RC_ERR_FAILED);
          return NULL;
       }
       Broker->xft->lockMutex(*mtx);
