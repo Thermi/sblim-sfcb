@@ -72,7 +72,10 @@ struct native_instance {
    char **key_list;
 };
 
+static pthread_mutex_t gopMtx = PTHREAD_MUTEX_INITIALIZER;
+
 #ifdef HAVE_DEFAULT_PROPERTIES 
+static pthread_mutex_t ifdpMtx = PTHREAD_MUTEX_INITIALIZER;
 static int instFillDefaultProperties(struct native_instance *inst, 
 				      const char * ns, const char * cn);
 #endif
@@ -439,7 +442,6 @@ static CMPIStatus __ift_setObjectPath(CMPIInstance * inst,
 static CMPIObjectPath *__ift_getObjectPath(const CMPIInstance * instance,
                                            CMPIStatus * rc)
 {
-   static CMPI_MUTEX_TYPE * mtx = NULL;
    static UtilHashTable *klt = NULL;
    int j, f = 0;
    CMPIStatus tmp;
@@ -480,18 +482,7 @@ static CMPIObjectPath *__ift_getObjectPath(const CMPIInstance * instance,
       CMPIData d;
       unsigned int e, m;
 
-      if (mtx == NULL) {
-         int dummy = 0;
-	 mtx = memAlloc(MEM_TRACKED, sizeof(CMPI_MUTEX_TYPE), &dummy);
-	 *mtx = Broker->xft->newMutex(0); 
-      }
-      if (! *mtx) {
-         mlogf(M_ERROR, M_SHOW, "--- Could not get op for instance of %s; mutex creation failure\n", cn);
-         if(rc)
-            CMSetStatus(rc, CMPI_RC_ERR_FAILED);
-         return NULL;
-      }
-      Broker->xft->lockMutex(*mtx);
+      pthread_mutex_lock(&gopMtx);
       if (klt == NULL) klt = UtilFactory->newHashTable(61,
                  UtilHashTable_charKey | UtilHashTable_ignoreKeyCase);
 
@@ -504,11 +495,11 @@ static CMPIObjectPath *__ift_getObjectPath(const CMPIInstance * instance,
 	    if(rc) {
 	       CMSetStatus(rc, CMPI_RC_ERR_INVALID_CLASS);
 	    }
-	    Broker->xft->unlockMutex(*mtx);
+	    pthread_mutex_unlock(&gopMtx);
 	    return NULL;
 	 }
       }
-      Broker->xft->unlockMutex(*mtx);
+      pthread_mutex_unlock(&gopMtx);
       m = kl->ft->getSize(kl, NULL);
 
       for (e = 0; e < m; e++) {
@@ -1030,7 +1021,6 @@ void setInstanceLocalMode(int mode)
 static int instFillDefaultProperties(struct native_instance *inst, 
 				      const char * ns, const char * cn)
 {
-   static CMPI_MUTEX_TYPE * mtx = NULL;
    static UtilHashTable *clt = NULL;
    CMPIConstClass *cc;
    CMPICount       pc;
@@ -1039,14 +1029,7 @@ static int instFillDefaultProperties(struct native_instance *inst,
    CMPIString     *pn = NULL;
    CMPIValue      *vp;
    
-   if (mtx == NULL) {
-      mtx = malloc(sizeof(CMPI_MUTEX_TYPE));
-      *mtx = Broker->xft->newMutex(0); 
-   }
-   if (!*mtx) {
-      return -1;
-   }
-   Broker->xft->lockMutex(*mtx);
+   pthread_mutex_lock(&ifdpMtx);
    if (clt == NULL) clt = 
       UtilFactory->newHashTable(61,
 				UtilHashTable_charKey | UtilHashTable_ignoreKeyCase);
@@ -1057,7 +1040,7 @@ static int instFillDefaultProperties(struct native_instance *inst,
 	 clt->ft->put(clt, strdup(cn), cc->ft->clone(cc,NULL));
       }
    }
-   Broker->xft->unlockMutex(*mtx);
+   pthread_mutex_unlock(&ifdpMtx);
    if (cc) {
       pc = cc->ft->getPropertyCount(cc,NULL);
       while (pc > 0) {
