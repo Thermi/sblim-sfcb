@@ -204,3 +204,7 @@ Zane Bitter, Red Hat
 --------------------
 03/28/2012 [ 3510458 ] Malformed XML response to GetProperty
 03/28/2012 [ 3510456 ] GetProperty calls not passing keys to providers
+
+Ting Wang
+----------
+10/13/2013 [sfcb-tix:#81] Bad CMPIType assignment in cimXmlOps
