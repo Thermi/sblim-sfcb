@@ -175,6 +175,9 @@ typedef struct _ClientEnvFT {
                (ClientEnv *ce, CMPIUint64 binTime, CMPIBoolean interval, CMPIStatus* rc);
    CMPIDateTime* (*newDateTimeFromChars)
                (ClientEnv *ce, const char *utcTime, CMPIStatus* rc);
+   void* (*newIndicationListener)
+                (ClientEnv *ce, int sslMode, int *portNumber, char **socketName,
+                 void (*fp) (CMPIInstance *indInstance), CMPIStatus* rc);
 } ClientEnvFT;
 
 struct _ClientEnv {
