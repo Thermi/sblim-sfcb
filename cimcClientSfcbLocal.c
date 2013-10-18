@@ -2036,6 +2036,15 @@ void * newIndicationListener(ClientEnv *ce, int sslMode, int *portNumber, char *
   return NULL;
 }
 
+void * _markHeap() {
+  return markHeap();
+}
+
+void _releaseHeap(void* heap) {
+  releaseHeap(heap);
+  return;
+}
+
 ClientEnv* _Create_SfcbLocal_Env(char *id, unsigned int options, int *rc, char **msg)
 {
  
@@ -2053,6 +2062,8 @@ ClientEnv* _Create_SfcbLocal_Env(char *id, unsigned int options, int *rc, char *
       newDateTimeFromBinary,
       newDateTimeFromChars,
       newIndicationListener,
+      _markHeap,
+      _releaseHeap,
     };
    
    //    localClientMode=1;
