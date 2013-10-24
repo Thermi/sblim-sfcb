@@ -110,6 +110,7 @@ static Control init[] = {
    {"sslCertificateFilePath", 0, SFCB_CONFDIR "/server.pem"},
    {"sslCiphers", 0, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"},
    {"sslDhParamsFilePath", 0, NULL},
+   {"sslEcDhCurveName", 0, "secp224r1"},
 
    {"registrationDir", 0, SFCB_STATEDIR "/registration"},
    {"providerDirs", 3, SFCB_LIBDIR " " CMPI_LIBDIR " " LIBDIR}, /* 3: unstripped */
