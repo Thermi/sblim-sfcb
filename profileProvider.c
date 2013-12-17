@@ -81,12 +81,14 @@ CMPIStatus ProfileProviderMethodCleanup(CMPIMethodMI * mi,
   CMPIStatus      st = { CMPI_RC_OK, NULL };
   _SFCB_ENTER(TRACE_INDPROVIDER, "ProfileProviderCleanup");
 #ifdef HAVE_SLP
-  // Tell SLP update thread that we're shutting down
-  _SFCB_TRACE(1, ("--- Stopping SLP thread"));
-  pthread_kill(slpUpdateThread, SIGUSR2);
-  // Wait for thread to complete
-  pthread_join(slpUpdateThread, NULL);
-  _SFCB_TRACE(1, ("--- SLP Thread stopped"));
+  if (slpUpdateThread) {
+    // Tell SLP update thread that we're shutting down
+    _SFCB_TRACE(1, ("--- Stopping SLP thread"));
+    pthread_kill(slpUpdateThread, SIGUSR2);
+    // Wait for thread to complete
+    pthread_join(slpUpdateThread, NULL);
+    _SFCB_TRACE(1, ("--- SLP Thread stopped"));
+  }
 #endif // HAVE_SLP
   _SFCB_RETURN(st);
 }
@@ -248,8 +250,9 @@ spawnUpdateThread(const CMPIContext *ctx)
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
   rc = pthread_create(&newThread, &attr, slpUpdate, thread_args);
   if(rc) {
-    // deal with thread creation error
-    exit(1);
+    mlogf(M_ERROR, M_SHOW, "--- Could not create SLP update thread. SLP disabled.");
+    /* note: without SLP running, this provider is pretty useless.  But 
+       if it's marked "unload: never" there's not much we can do from here */
   }
 }
 
