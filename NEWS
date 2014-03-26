@@ -1,13 +1,28 @@
 Changes in 1.3.18
-================
+=================
 
 New features:
+- [sfcb-tix:#70] Reload SSL context without restarting httpd
+- [sfcb-tix:#86] Support configurable SSL Diffie Hellman parameters file
+- [sfcb-tix:#87] Support configurable SSL ECDH elliptic curve name
+- [sfcb-tix:#99] Add config property enableSslCipherServerPref
 
 Bugs fixed:
 - [sfcb-tix:#56] Intermittent segfault at shutdown
+- [sfcb-tix:#69] Fix logger for long-lived clients, was: "#2347 Don't spawn logger for clients"
+- [sfcb-tix:#78] Missing null check in ift_getObjectPath, transposed debug stmts in memAlloc
+- [sfcb-tix:#78] Simplify mutex handling in instance.c
+- [sfcb-tix:#81] Bad CMPIType assignment in cimXmlOps
+- [sfcb-tix:#83] Add Alternate getObjectPath() for SfcbLocal Connections
+- [sfcb-tix:#82] ClientEnvFT for SfcbLocal doesn't match SFCC
+- [sfcb-tix:#85] SFCB: SfcbLocal interface should expose markHeap() and releaseHeap()
+- [sfcb-tix:#84] Upcall mutex not freed on shutdown
+- [sfcb-tix:#85] SFCB: SfcbLocal interface should expose markHeap() and releaseHeap()
+- [sfcb-tix:#92] indicationDeliveryThreadLimit not properly enforced
+- [sfcb-tix:#93] ProfileProvider segfault while stopping slpUpdate thread
 
 Changes in 1.3.17
-================
+=================
 
 New features:
 - 3597805 Restart HTTP daemon without restarting SFCB
