@@ -111,6 +111,8 @@ static Control init[] = {
    {"sslCiphers", 0, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"},
    {"sslDhParamsFilePath", 0, NULL},
    {"sslEcDhCurveName", 0, "secp224r1"},
+   {"sslNoSSLv3", 2, "false"},
+   {"sslNoTLSv1", 2, "false"},
    {"enableSslCipherServerPref", 2, "false"},
 
    {"registrationDir", 0, SFCB_STATEDIR "/registration"},
